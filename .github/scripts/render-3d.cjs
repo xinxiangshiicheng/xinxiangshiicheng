@@ -47,14 +47,20 @@ async function main() {
   if (option('--data')) {
     data=JSON.parse(fs.readFileSync(option('--data'),'utf8').replace(/^\uFEFF/,''));
   } else {
+    const year=new Date().getUTCFullYear();
     const query=`query { user(login:"${username}") {
+      name
+      thisYear: contributionsCollection(from:"${year}-01-01T00:00:00Z") { totalCommitContributions }
       contributionsCollection {
         contributionCalendar { isHalloween totalContributions weeks { contributionDays { contributionCount contributionLevel date } } }
         commitContributionsByRepository(maxRepositories:100) { repository { primaryLanguage { name color } } contributions { totalCount } }
         totalCommitContributions totalIssueContributions totalPullRequestContributions totalPullRequestReviewContributions totalRepositoryContributions
       }
-      repositories(first:100,ownerAffiliations:OWNER,privacy:PUBLIC) { edges { cursor } nodes { forkCount stargazerCount } }
-    } }`;
+      repositories(first:100,ownerAffiliations:OWNER,privacy:PUBLIC) { edges { cursor } nodes { isFork forkCount stargazerCount languages(first:100) { edges { size node { name color } } } } }
+    }
+      prs: search(query:"author:${username} type:pr is:public",type:ISSUE) { issueCount }
+      issues: search(query:"author:${username} type:issue is:public",type:ISSUE) { issueCount }
+    }`;
     const response=await fetch('https://api.github.com/graphql', {
       method:'POST', headers:{'Content-Type':'application/json',Authorization:`Bearer ${process.env.GITHUB_TOKEN}`},body:JSON.stringify({query}),signal:AbortSignal.timeout(30000)
     });
@@ -72,6 +78,7 @@ async function main() {
     html=await response.text();
   }
   data.data.user.contributionsCollection.contributionCalendar=parseCalendar(html);
+  if(option('--metadata')) fs.writeFileSync(option('--metadata'),JSON.stringify(data));
   const total=data.data.user.contributionsCollection.contributionCalendar.totalContributions;
   // Pass only the schema the renderer needs, not any extra profile fields.
   const safe={data:{user:{contributionsCollection:data.data.user.contributionsCollection,repositories:data.data.user.repositories}}};
