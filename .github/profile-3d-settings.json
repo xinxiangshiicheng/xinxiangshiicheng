@@ -1,0 +1,11 @@
+{
+  "type": "normal",
+  "fileName": "contributions-3d.svg",
+  "backgroundColor": "#0d1117",
+  "foregroundColor": "#c9d1d9",
+  "strongColor": "#a7d9df",
+  "weakColor": "#7d8590",
+  "radarColor": "#66aab6",
+  "growingAnimation": true,
+  "contribColors": ["#18232d", "#244752", "#387180", "#61a6b5", "#a7d9df"]
+}
